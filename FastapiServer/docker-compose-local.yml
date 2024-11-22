@@ -1,0 +1,29 @@
+version: "3.1"
+
+services:
+  server-backend:
+    build: ./server-backend
+    environment:
+      - API_ENDPOINT=http://api.example.com
+      - API_LOGIN=admin
+      - API_PASSWORD=yourpassword
+      - USERS_JSON=./users.json
+      - DATABASE_URL=postgresql://user:password@db/mydatabase  # Connection string for PostgreSQL
+    ports:
+      - "8081:80"
+    depends_on:
+      - db  # Ensures the backend service waits for the DB to be ready
+
+  db:
+    image: postgres:13  # Use the official PostgreSQL image
+    environment:
+      POSTGRES_USER: user  # Database username
+      POSTGRES_PASSWORD: password  # Database password
+      POSTGRES_DB: mydatabase  # Database name to be created
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data  # Data persistence
+
+volumes:
+  postgres_data:  # This ensures your database data persists across container restarts
