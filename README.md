@@ -8,7 +8,7 @@
 ### Step-by-Step Instructions
 
 1. **Write a Description for a Set of Tests**  
-   A description is necessary for further data analysis. For example, it could specify the place where the tests are being conducted.
+   On the start of application you will be promped to enter a description for the test group. A description is necessary for further data analysis. For example, it could specify the place where the tests are being conducted.
    
 3. **Choose an Activity**  
    Pick an activity from the list (e.g., standing, 10 steps, etc.). Once selected, a timer will begin.
