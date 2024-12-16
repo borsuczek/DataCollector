@@ -21,7 +21,7 @@
    - **Save** the collected data to the database (or locally if offline).
    - **Discard** the data and return to the activity selection screen.
 
-6. **Repeat or Modify Tests**  
+6. **Repeat Tests**  
    - To start another activity within the same test group, select it from the list and repeat the process.
    - If you want to change tests group press the **Back** button to return to the test description screen.
   
