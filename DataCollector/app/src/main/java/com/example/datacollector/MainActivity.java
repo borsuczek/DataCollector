@@ -39,8 +39,6 @@ public class MainActivity extends AppCompatActivity {
     private SensorDataManager sensorDataManager;
     private LocationManagerWrapper locationManagerWrapper;
     private WifiManagerWrapper wifiManagerWrapper;
-    public CacheManager cacheManager;
-    private ServerManager serverManager;
     private static final int PERMISSION_REQUEST_CODE = 1;
     private Button stopButton;
     private Button discardButton;
@@ -51,7 +49,6 @@ public class MainActivity extends AppCompatActivity {
     private String description = "";
     private Pair<String, String> descriptionData;
     private Pair<String, String> testData;
-    private boolean isDescriptionNew = true;
     String device;
 
 
@@ -71,6 +68,7 @@ public class MainActivity extends AppCompatActivity {
         Log.i("model: ", manufacturer + " " + model);
 
         initializeActivitiesIds();
+        initializeManagers();
         descriptionView();
 
     }
@@ -85,12 +83,14 @@ public class MainActivity extends AppCompatActivity {
     }
     private void initializeActivitiesIds() {
         activityIds = new HashMap<>();
-        activityIds.put("In Elevator", 1);
+        activityIds.put("Standing", 1);
         activityIds.put("10 Steps", 2);
-        activityIds.put("Stairs", 3);
-        activityIds.put("Standing", 4);
+        activityIds.put("Stairs Up", 3);
+        activityIds.put("Stairs Down", 4);
         activityIds.put("Turning 90 Degrees Left", 5);
         activityIds.put("Turning 90 Degrees Right", 6);
+        activityIds.put("Elevator up", 7);
+        activityIds.put("Elevator Down", 8);
     }
 
     private void descriptionView(){
@@ -102,15 +102,13 @@ public class MainActivity extends AppCompatActivity {
 
         TextView dateTimeTextView = findViewById(R.id.dateTimeTextView);
         LocalDateTime DateTime = LocalDateTime.now();
-        String currentDateTimeDisplay = DateTime.format(DateTimeFormatter.ofPattern("dd-M-yyyy, hh:mm"));
+        String currentDateTimeDisplay = DateTime.format(DateTimeFormatter.ofPattern("dd-M-yyyy, HH:mm"));
         dateTimeTextView.setText("Date: " + currentDateTimeDisplay);
-        String currentDateTime = DateTime.format(DateTimeFormatter.ofPattern("M-dd-yyyy hh:mm:ss"));
+        String currentDateTime = DateTime.format(DateTimeFormatter.ofPattern("M-dd-yyyy HH:mm:ss"));
         submitButton.setOnClickListener(view -> {
             if (!descriptionEditText.getText().toString().isEmpty()) {
                 description = descriptionEditText.getText().toString();
                 descriptionUUID = generateUUID();
-                //to jakiś check czy już było a jak nie to na koniec
-                isDescriptionNew = true;
                 descriptionData = new Pair<>("test_descriptions", descriptionUUID + ";" + description + ";" + device  + ";" + currentDateTime + "\n");
                 setTestsView(view);
             } else {
@@ -125,18 +123,18 @@ public class MainActivity extends AppCompatActivity {
         TextView deviceModelTextView = findViewById(R.id.deviceModelTextView);
         deviceModelTextView.setText(description);
 
-        initializeManagers();
-
         activityButtons = new ArrayList<>();
 
         stopButton = findViewById(R.id.stopButton);
         discardButton = findViewById(R.id.discardButton);
-        activityButtons.add(findViewById(R.id.inElevatorButton));
-        activityButtons.add(findViewById(R.id.tenStepsButton));
-        activityButtons.add(findViewById(R.id.stairsButton));
         activityButtons.add(findViewById(R.id.standingButton));
+        activityButtons.add(findViewById(R.id.tenStepsButton));
+        activityButtons.add(findViewById(R.id.stairsUpButton));
+        activityButtons.add(findViewById(R.id.stairsDownButton));
         activityButtons.add(findViewById(R.id.turningLeftButton));
         activityButtons.add(findViewById(R.id.turningRightButton));
+        activityButtons.add(findViewById(R.id.elevatorUpButton));
+        activityButtons.add(findViewById(R.id.elevatorDownButton));
         backButton = findViewById(R.id.backButton);
 
 
@@ -160,13 +158,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initializeManagers() {
-        cacheManager = new CacheManager(this);
-        serverManager = new ServerManager(this, cacheManager);
-        sensorDataManager = new SensorDataManager(this, serverManager);
+        sensorDataManager = new SensorDataManager(this);
         locationManagerWrapper = new LocationManagerWrapper(this, sensorDataManager);
         wifiManagerWrapper = new WifiManagerWrapper(this, sensorDataManager);
-        cacheManager.checkCache();
-        Log.i("ddd", "oodod");
+        CacheManager.getInstance(this).checkCache();
+        Log.i("MainActivity", "Managers initialized");
     }
 
     private void startDataCollection(String activity) {
@@ -174,10 +170,10 @@ public class MainActivity extends AppCompatActivity {
         TextView waitingTextView = findViewById(R.id.waitingTextView);
         waitingTextView.setVisibility(View.VISIBLE);
         waitingTextView.setText("Starting in: 3");
-//testId
+
         String testUUID = generateUUID();
         testData = new Pair<>("tests", testUUID + ";" + activityIds.getOrDefault(activity, -1) + ";" + descriptionUUID + "\n");
-        Log.i("stop", "gg");
+
         new CountDownTimer(3000, 1000) {
             public void onTick(long millisUntilFinished) {
                 int secondsLeft = (int) (millisUntilFinished / 1000) +1;
@@ -189,11 +185,10 @@ public class MainActivity extends AppCompatActivity {
                 stopButton.setVisibility(View.VISIBLE);
                 discardButton.setVisibility(View.VISIBLE);
 
-                new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                    sensorDataManager.startDataCollection(testUUID);
-                    locationManagerWrapper.startLocationUpdates(testUUID);
-                    wifiManagerWrapper.startWifiScan(testUUID);
-                }, 10);
+
+                sensorDataManager.startDataCollection(testUUID, new Pair<>(descriptionData.first, descriptionData.second), new Pair<>(testData.first, testData.second));
+                locationManagerWrapper.startLocationUpdates(testUUID);
+                wifiManagerWrapper.startWifiScan(testUUID);
             }
         }.start();
 
@@ -237,31 +232,13 @@ public class MainActivity extends AppCompatActivity {
         setTestsView(view);
     }
 
-    public Pair getTestData(){
-        return testData;
-    }
-
-    public Pair getDescriptionData(){
-        return descriptionData;
-    }
-
-    public void setIsDescriptionNew(boolean isDescriptionNew){
-        this.isDescriptionNew = isDescriptionNew;
-    }
-
-    public boolean getIsDescriptionNew(){
-        return isDescriptionNew;
-    }
-
     @Override
     protected void onResume() {
         super.onResume();
-        //sensorDataManager.registerSensorListeners();
     }
     @Override
     protected void onPause() {
         super.onPause();
-        //sensorDataManager.unregisterSensorListeners();
     }
 
     @Override

@@ -67,7 +67,7 @@ public class LocationManagerWrapper implements LocationListener {
             Float bearing = location.hasBearing() ? location.getBearing() : null;
             Float bearingAccuracy = location.hasBearingAccuracy() ? location.getBearingAccuracyDegrees() : null;
 
-            data = String.format(Locale.US, "%s;%f;%f;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s\n",
+            data = String.format(Locale.US, "%s;%g;%g;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s\n",
                     timestampWithMillis,
                     location.getLatitude(),
                     location.getLongitude(),
@@ -89,11 +89,11 @@ public class LocationManagerWrapper implements LocationListener {
     }
 
     private String formatNullable(Double value) {
-        return (value != null) ? String.format(Locale.US, "%f", value) : "None";
+        return (value != null) ? String.format(Locale.US, "%g", value) : "None";
     }
 
     private String formatNullable(Float value) {
-        return (value != null) ? String.format(Locale.US, "%f", value) : "None";
+        return (value != null) ? String.format(Locale.US, "%g", value) : "None";
     }
 
     @Override

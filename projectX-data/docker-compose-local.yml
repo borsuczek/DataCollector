@@ -1,0 +1,29 @@
+version: "3.1"
+
+services:
+  server-backend:
+    build: ./server-backend
+    environment:
+      - API_ENDPOINT=
+      - API_LOGIN=
+      - API_PASSWORD=
+      - USERS_JSON=./users.json
+      - DATABASE_URL=postgresql://user:password@db/mydatabase
+    ports:
+      - "8081:80"
+    depends_on:
+      - db
+
+  db:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: mydatabase
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

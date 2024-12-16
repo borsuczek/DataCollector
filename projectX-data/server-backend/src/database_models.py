@@ -10,10 +10,11 @@ Base = declarative_base()
 class TestDescription(Base):
     __tablename__ = 'test_descriptions'
 
-    descriptionId = Column(UUID(as_uuid=True), primary_key=True)
+    description_id = Column(UUID(as_uuid=True), primary_key=True)
     description = Column(String)
     model = Column(String)
     timestamp = Column(DateTime)
+    username = Column(String)
 
     tests = relationship("Test", back_populates="description", cascade="all, delete-orphan")
 
@@ -21,7 +22,7 @@ class TestDescription(Base):
 class Activity(Base):
     __tablename__ = 'activities'
 
-    activityId = Column(BigInteger, primary_key=True, autoincrement=True)
+    activity_id = Column(BigInteger, primary_key=True, autoincrement=True)
     activity = Column(String)
 
     tests = relationship("Test", back_populates="activity", cascade="all, delete-orphan")
@@ -30,9 +31,9 @@ class Activity(Base):
 class Test(Base):
     __tablename__ = 'tests'
 
-    testId = Column(UUID(as_uuid=True), primary_key=True)
-    activityId = Column(BigInteger, ForeignKey('activities.activityId', ondelete="CASCADE"), nullable=False)
-    descriptionId = Column(UUID(as_uuid=True), ForeignKey('test_descriptions.descriptionId', ondelete="CASCADE"), nullable=False)
+    test_id = Column(UUID(as_uuid=True), primary_key=True)
+    activity_id = Column(BigInteger, ForeignKey('activities.activity_id', ondelete="CASCADE"), nullable=False)
+    description_id = Column(UUID(as_uuid=True), ForeignKey('test_descriptions.description_id', ondelete="CASCADE"), nullable=False)
 
     activity = relationship("Activity", back_populates="tests")
     description = relationship("TestDescription", back_populates="tests")
@@ -56,7 +57,7 @@ class Accelerometer(Base):
     x = Column(Float)
     y = Column(Float)
     z = Column(Float)
-    test_id = Column(UUID(as_uuid=True), ForeignKey('tests.testId', ondelete="CASCADE"), nullable=False)
+    test_id = Column(UUID(as_uuid=True), ForeignKey('tests.test_id', ondelete="CASCADE"), nullable=False)
 
     test = relationship("Test", back_populates="accelerometer_readings")
 
@@ -68,7 +69,7 @@ class Gyroscope(Base):
     x = Column(Float)
     y = Column(Float)
     z = Column(Float)
-    test_id = Column(UUID(as_uuid=True), ForeignKey('tests.testId', ondelete="CASCADE"), nullable=False)
+    test_id = Column(UUID(as_uuid=True), ForeignKey('tests.test_id', ondelete="CASCADE"), nullable=False)
 
     test = relationship("Test", back_populates="gyroscope_readings")
 
@@ -80,7 +81,7 @@ class MagneticField(Base):
     x = Column(Float)
     y = Column(Float)
     z = Column(Float)
-    test_id = Column(UUID(as_uuid=True), ForeignKey('tests.testId', ondelete="CASCADE"), nullable=False)
+    test_id = Column(UUID(as_uuid=True), ForeignKey('tests.test_id', ondelete="CASCADE"), nullable=False)
 
     test = relationship("Test", back_populates="magnetic_field_readings")
 
@@ -92,7 +93,7 @@ class Gravity(Base):
     x = Column(Float)
     y = Column(Float)
     z = Column(Float)
-    test_id = Column(UUID(as_uuid=True), ForeignKey('tests.testId', ondelete="CASCADE"), nullable=False)
+    test_id = Column(UUID(as_uuid=True), ForeignKey('tests.test_id', ondelete="CASCADE"), nullable=False)
 
     test = relationship("Test", back_populates="gravity_readings")
 
@@ -102,7 +103,7 @@ class Proximity(Base):
     id = Column(BigInteger, primary_key=True, autoincrement=True)
     timestamp = Column(DateTime)
     distance_cm = Column(Float)
-    test_id = Column(UUID(as_uuid=True), ForeignKey('tests.testId', ondelete="CASCADE"), nullable=False)
+    test_id = Column(UUID(as_uuid=True), ForeignKey('tests.test_id', ondelete="CASCADE"), nullable=False)
 
     test = relationship("Test", back_populates="proximity_readings")
 
@@ -112,7 +113,7 @@ class Pressure(Base):
     id = Column(BigInteger, primary_key=True, autoincrement=True)
     timestamp = Column(DateTime)
     pressure_hpa = Column(Float)
-    test_id = Column(UUID(as_uuid=True), ForeignKey('tests.testId', ondelete="CASCADE"), nullable=False)
+    test_id = Column(UUID(as_uuid=True), ForeignKey('tests.test_id', ondelete="CASCADE"), nullable=False)
 
     test = relationship("Test", back_populates="pressure_readings")
 
@@ -124,7 +125,7 @@ class LinearAcceleration(Base):
     x = Column(Float)
     y = Column(Float)
     z = Column(Float)
-    test_id = Column(UUID(as_uuid=True), ForeignKey('tests.testId', ondelete="CASCADE"), nullable=False)
+    test_id = Column(UUID(as_uuid=True), ForeignKey('tests.test_id', ondelete="CASCADE"), nullable=False)
 
     test = relationship("Test", back_populates="linear_acceleration_readings")
 
@@ -137,7 +138,7 @@ class RotationVector(Base):
     y = Column(Float)
     z = Column(Float)
     cos = Column(Float)
-    test_id = Column(UUID(as_uuid=True), ForeignKey('tests.testId', ondelete="CASCADE"), nullable=False)
+    test_id = Column(UUID(as_uuid=True), ForeignKey('tests.test_id', ondelete="CASCADE"), nullable=False)
 
     test = relationship("Test", back_populates="rotation_vector_readings")
 
@@ -151,7 +152,7 @@ class Wifi(Base):
     bssid = Column(String)
     level = Column(Integer)
     frequency = Column(Integer)
-    test_id = Column(UUID(as_uuid=True), ForeignKey('tests.testId', ondelete="CASCADE"), nullable=False)
+    test_id = Column(UUID(as_uuid=True), ForeignKey('tests.test_id', ondelete="CASCADE"), nullable=False)
 
     test = relationship("Test", back_populates="wifi_readings")
 
@@ -173,6 +174,6 @@ class Location(Base):
     bearing = Column(Float, nullable=True)
     bearing_accuracy = Column(Float, nullable=True)
     provider = Column(String)
-    test_id = Column(UUID(as_uuid=True), ForeignKey('tests.testId', ondelete="CASCADE"))
+    test_id = Column(UUID(as_uuid=True), ForeignKey('tests.test_id', ondelete="CASCADE"))
 
     test = relationship("Test", back_populates="location_readings")

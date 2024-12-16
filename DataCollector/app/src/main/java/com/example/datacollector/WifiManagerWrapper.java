@@ -46,7 +46,6 @@ public class WifiManagerWrapper {
     public void startWifiScan(String testUUID) {
         currentTestUUID = testUUID;
         isCollectingData = true;
-        Log.i("wifi", "dd");
         scanWifiNetworks();
     }
 
@@ -76,12 +75,9 @@ public class WifiManagerWrapper {
 
                         long currentTimeMillis = System.currentTimeMillis();
                         Instant instant = Instant.ofEpochMilli(currentTimeMillis);
-                        String timestampWithMillis = instant.toString();
-//                        long locationTimeMillis = result.timestamp;
-//                        Instant instant = Instant.ofEpochMilli(locationTimeMillis);
-//                        ZonedDateTime zonedDateTime = instant.atZone(ZoneId.systemDefault());
-//                        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS");
-//                        String timestampWithMillis = zonedDateTime.format(formatter);
+                        ZonedDateTime zonedDateTime = instant.atZone(ZoneId.systemDefault());
+                        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS");
+                        String timestampWithMillis = zonedDateTime.format(formatter);
 
                         String data = String.format(Locale.US, "%s;%s;%s;%d;%d;%s\n",
                                 timestampWithMillis,
@@ -91,7 +87,6 @@ public class WifiManagerWrapper {
                                 result.frequency,
                                 currentTestUUID);
 
-                        Log.i("WifiData", data);
                         sensorDataManager.getSensorDataMap().get(sensorName).append(data);
 
                         previousScanResults.put(networkKey, new Pair<>(currentSignalStrength, currentFrequency));

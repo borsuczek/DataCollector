@@ -19,7 +19,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         android:paddingTop="100dp"
-        android:paddingBottom="100dp"/>
+        android:paddingBottom="80dp"/>
 
     <LinearLayout
         android:id="@+id/buttonLayout"
@@ -29,15 +29,15 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/deviceModelTextView"
-        android:paddingTop="20dp"
+        android:paddingTop="0dp"
         android:paddingHorizontal="20dp"
-        android:paddingBottom="100dp">
+        android:paddingBottom="80dp">
 
         <Button
-            android:id="@+id/inElevatorButton"
+            android:id="@+id/standingButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="In Elevator" />
+            android:text="Standing" />
 
         <Button
             android:id="@+id/tenStepsButton"
@@ -46,16 +46,16 @@
             android:text="10 Steps" />
 
         <Button
-            android:id="@+id/stairsButton"
+            android:id="@+id/stairsUpButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Stairs" />
+            android:text="Stairs Up" />
 
         <Button
-            android:id="@+id/standingButton"
+            android:id="@+id/stairsDownButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Standing" />
+            android:text="Stairs Down" />
 
         <Button
             android:id="@+id/turningLeftButton"
@@ -68,6 +68,18 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Turning 90 Degrees Right" />
+
+        <Button
+            android:id="@+id/elevatorUpButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Elevator up" />
+
+        <Button
+            android:id="@+id/elevatorDownButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Elevator Down" />
     </LinearLayout>
 
     <Button

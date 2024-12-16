@@ -1,0 +1,18 @@
+{
+  "test": {
+    "username": "test",
+    "hashed_password": "$2a$12$QkNVp2clro//4AD5NWbHSO48fDdQXRhwTpvvn6NOwbIPBG6p67qZm"
+  },
+  "aleksandra": {
+    "username": "aleksandra",
+    "hashed_password": "$2a$12$QkNVp2clro//4AD5NWbHSO48fDdQXRhwTpvvn6NOwbIPBG6p67qZm"
+  },
+  "michal": {
+    "username": "michal",
+    "hashed_password": "$2a$12$QkNVp2clro//4AD5NWbHSO48fDdQXRhwTpvvn6NOwbIPBG6p67qZm"
+  },
+  "andrzej": {
+    "username": "andrzej",
+    "hashed_password": "$2a$12$QkNVp2clro//4AD5NWbHSO48fDdQXRhwTpvvn6NOwbIPBG6p67qZm"
+  }
+}

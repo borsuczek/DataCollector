@@ -102,7 +102,6 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
 
 async def get_current_user(request: Request):
     token = request.cookies.get("access_token")
-    print(f"Token from cookies: {token}")
     if not token:
         auth_header = request.headers.get("Authorization")
         if auth_header and auth_header.startswith("Bearer "):
@@ -121,7 +120,7 @@ async def get_current_user(request: Request):
     if token_data.username is None:
         raise unauthorized_exception("Not authenticated")
 
-    return User(username="test")
+    return User(username=username)
 
 
 def unauthorized_exception(message) -> HTTPException:
@@ -203,12 +202,14 @@ def startup(db: Session = Depends(get_db)):
     db = SessionLocal()
     try:
         static_activities = [
-            {"activity": "In Elevator"},
-            {"activity": "10 Steps"},
-            {"activity": "Stairs"},
             {"activity": "Standing"},
+            {"activity": "10 Steps"},
+            {"activity": "Stairs Up"},
+            {"activity": "Stairs Down"},
             {"activity": "Turning 90 Degrees Left"},
             {"activity": "Turning 90 Degrees Right"},
+            {"activity": "Elevator up"},
+            {"activity": "Elevator Down"},
         ]
 
         if db.query(Activity).count() == 0:
@@ -228,7 +229,7 @@ def insert_data(table, rows: list[dict], db: Session):
         db.commit()
         inserted_id = result.fetchone()[0]
 
-        return {"message": f"Data inserted successfully into {table.name}", "inserted_id": inserted_id}
+        return {"message": f"Data inserted into {table.name}", "inserted_id": inserted_id}
     except Exception as e:
         db.rollback()
         raise Exception(f"Error inserting data: {str(e)}")
@@ -250,10 +251,11 @@ async def insert_dynamic_data(payload: dict, _current_user: User = Depends(get_c
     data_lines = data_string.strip().split("\n")
     for line in data_lines:
         values = line.split(";")
-        if len(values) != len(column_names):
-            raise HTTPException(status_code=400, detail="Data format does not match table column count")
 
         row = {column: (value if value != "None" else None) for column, value in zip(column_names, values)}
+        if table_name == "test_descriptions":
+            row["username"] = _current_user.username
+
         rows.append(row)
 
     try:
@@ -272,7 +274,6 @@ async def get_last_id(table_name: str, _current_user: User = Depends(get_current
         primary_key_column = table.primary_key.columns.values()[0]
 
         last_id = db.query(primary_key_column).order_by(desc(primary_key_column)).first()
-        print(last_id)
 
         if last_id is not None:
             return {"last_id": last_id[0]}
@@ -294,7 +295,6 @@ async def delete_data(payload: dict, _current_user: User = Depends(get_current_u
         primary_key_column = list(table.primary_key.columns)[0]
 
         delete_row = table.delete().where(primary_key_column == id_to_delete)
-        print(delete_row)
         result = db.execute(delete_row)
         db.commit()
 

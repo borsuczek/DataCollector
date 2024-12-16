@@ -24,87 +24,83 @@ public class CacheManager {
     private Context context;
     private final Handler handler = new Handler(Looper.getMainLooper());
     private boolean cacheExists;
-    private ServerManager serverManager;
+    private static CacheManager instance;
 
-    public CacheManager(Context context) {
-        this.context = context;
+    private CacheManager(Context context) {
+        this.context = context.getApplicationContext();
         this.cacheFile = new File(this.context.getFilesDir(), cacheFileName);
-        Log.i("jhghjj", "kjkjkjk");
+        Log.i(TAG, "CacheManager initialized");
+    }
+
+    public static synchronized CacheManager getInstance(Context context) {
+        if (instance == null) {
+            instance = new CacheManager(context);
+        }
+        return instance;
     }
 
     public void checkCache(){
         cacheExists = cacheFile.exists();
-        Log.i("jjj", "kjkjkjk");
         if(cacheExists) {
-            Log.i("ss","dc");
+            Log.i(TAG,"Cache exists");
             //cacheFile.delete();
-            //new Thread(this::writeDataFromCache).start();
+            new Thread(this::readDataFromCache).start();
         }
     }
 
     public void cacheData(String tableName, String data) {
         try {
-            FileWriter writer = new FileWriter(cacheFile, true);
-            writer.write(tableName + "|" + data);
-            writer.close();
-            Log.i(TAG, "Multiline data cached successfully for table: " + tableName);
-            if(!cacheExists) {
-                cacheExists = true;
+            if(data != null) {
+                FileWriter writer = new FileWriter(cacheFile, true);
+                writer.write("|" + tableName + "\n" + data);
+                writer.close();
+                Log.i(TAG, "Data cached successfully for table: " + tableName);
+                if (!cacheExists) {
+                    cacheExists = true;
+                }
             }
-
         } catch (IOException e) {
             Log.e(TAG, "Failed to cache data: " + e.getMessage());
         }
     }
 
-    private Map<String, StringBuilder> readDataFromCache() {
-        Map<String, StringBuilder> cacheDataMap = new HashMap<>();
-        if (cacheFile.exists()) {
-            try (BufferedReader reader = new BufferedReader(new FileReader(cacheFile))) {
-                String line;
-                String tableName = null;
-                StringBuilder dataStringBuilder = null;
-                String dataLine;
+    private void readDataFromCache() {
+        if(ServerManager.getInstance(context).isServerAvailable()) {
+            File tempFile = new File(cacheFile.getParent(), "temp_cache.txt");
+            cacheFile.renameTo(tempFile);
+            cacheFile = new File(this.context.getFilesDir(), cacheFileName);
+            if (tempFile.exists()) {
 
-                while ((line = reader.readLine()) != null) {
-                    if (line.contains("|")) {
-                        String[] tableData = line.split("\\|", 2);
-                        tableName = tableData[0];
-                        dataLine = tableData[1] + "\n";
-                        dataStringBuilder = new StringBuilder();
-                        cacheDataMap.put(tableName, dataStringBuilder);
-                        dataStringBuilder.append(dataLine);
-                    } else if (tableName != null) {
-                        dataLine = line + "\n";
-                        dataStringBuilder.append(dataLine);
+                try (BufferedReader reader = new BufferedReader(new FileReader(tempFile))) {
+                    String line;
+                    String tableName = null;
+                    StringBuilder data = null;
+
+                    while ((line = reader.readLine()) != null) {
+                        if (line.startsWith("|")) {
+                            if (tableName != null) {
+                                ServerManager.getInstance(context).insertData(tableName, data.toString());
+                                data.setLength(0);
+                            }
+                            data = new StringBuilder();
+                            tableName = line.substring(1).trim();
+                        } else if (tableName != null) {
+                            data.append(line).append("\n");
+                        }
                     }
+
+                    if (tableName != null) {
+                        ServerManager.getInstance(context).insertData(tableName, data.toString());
+                    }
+                } catch (IOException e) {
+                    Log.e(TAG, "Failed to read cache: " + e.getMessage());
                 }
-            } catch (IOException e) {
-                Log.e(TAG, "Failed to read cache: " + e.getMessage());
+            }
+            if (tempFile.exists()) {
+                tempFile.delete();
+                stopWriteCacheTask();
             }
         }
-        if (cacheFile.exists()) {
-            cacheFile.delete();
-            stopWriteCacheTask();
-        }
-        return cacheDataMap;
-    }
-
-    private void writeDataFromCache() {
-        Log.i("llsls", "dcjcdnj");
-        Map<String, StringBuilder> cacheDataMap = readDataFromCache();
-
-        for (Map.Entry<String, StringBuilder> entry : cacheDataMap.entrySet()) {
-            String tableName = entry.getKey();
-            String data = entry.getValue().toString();
-            Log.i("ldlld" +tableName, tableName);
-            serverManager.insertData(tableName, data);
-        }
-    }
-
-    public boolean isNetworkAvailable() {
-        ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-        return cm.getActiveNetwork() != null;
     }
 
     public void writeCacheTask() {
@@ -127,9 +123,5 @@ public class CacheManager {
 
     public void stopWriteCacheTask(){
         cacheExists = false;
-    }
-
-    public void setServerManager(ServerManager serverManager){
-        this.serverManager = serverManager;
     }
 }
