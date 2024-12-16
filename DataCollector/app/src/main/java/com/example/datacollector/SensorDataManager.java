@@ -6,6 +6,7 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Environment;
+import android.os.SystemClock;
 import android.util.Log;
 import android.util.Pair;
 import android.view.View;
@@ -26,6 +27,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class SensorDataManager implements SensorEventListener {
 
@@ -35,13 +38,13 @@ public class SensorDataManager implements SensorEventListener {
     private String currentTestUUID;
     private Map<Integer, Pair<String, Integer>> sensorInfoMap;
     private Map<String, StringBuilder> sensorDataMap;
-    private MainActivity mainActivity;
-    private ServerManager serverManager;
+    private Pair<String, String> descriptionData = new Pair<>("","");
+    private Pair<String, String> testData;
+    private boolean isDescriptionNew = true;
+    private static final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
-    public SensorDataManager(Context context, ServerManager serverManager) {
+    public SensorDataManager(Context context) {
         this.context = context;
-        this.mainActivity = (MainActivity) context;
-        this.serverManager = serverManager;
         sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
         sensorInfoMap = new HashMap<>();
         sensorDataMap = new HashMap<>();
@@ -64,10 +67,13 @@ public class SensorDataManager implements SensorEventListener {
         }
     }
 
-    public void startDataCollection(String testUUID) {
+    public void startDataCollection(String testUUID, Pair<String, String> description, Pair<String, String> test) {
         registerSensorListeners();
         isCollectingData = true;
         currentTestUUID = testUUID;
+        isDescriptionNew = isDescriptionNew || !Objects.equals(description.second, descriptionData.second);
+        descriptionData = description;
+        testData = test;
     }
 
     public void stopDataCollection() {
@@ -100,26 +106,27 @@ public class SensorDataManager implements SensorEventListener {
     @Override
     public void onSensorChanged(SensorEvent event) {
         if (isCollectingData) {
-            Pair<String, Integer> sensorInfo = sensorInfoMap.get(event.sensor.getType());
-            if (sensorInfo != null) {
-                String sensorName = sensorInfo.first;
-                String data = formatSensorData(event.values, sensorInfo.second);
+            executorService.submit(() -> {
+                Pair<String, Integer> sensorInfo = sensorInfoMap.get(event.sensor.getType());
+                if (sensorInfo != null) {
+                    String sensorName = sensorInfo.first;
+                    String data = formatSensorData(event.values, sensorInfo.second);
 
-                long currentTimeMillis = System.currentTimeMillis();
-                Instant instant = Instant.ofEpochMilli(currentTimeMillis);
-                String timestampWithMillis = instant.toString();
-//                long locationTimeMillis = event.timestamp;
-//                Instant instant = Instant.ofEpochMilli(locationTimeMillis);
-//                ZonedDateTime zonedDateTime = instant.atZone(ZoneId.systemDefault());
-//                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS");
-//                String timestampWithMillis = zonedDateTime.format(formatter);
-                String formattedData = String.format(Locale.US, "%s;%s;%s\n",
-                        timestampWithMillis, data, currentTestUUID);
+                    long currentTimeMillis = System.currentTimeMillis();
+                    long sensorTimestampMillis = currentTimeMillis -
+                            (SystemClock.elapsedRealtime() - (event.timestamp / 1_000_000L));
 
-                Log.i("sensorData", formattedData);
+                    Instant instant = Instant.ofEpochMilli(sensorTimestampMillis);
+                    ZonedDateTime zonedDateTime = instant.atZone(ZoneId.systemDefault());
+                    String timestampWithMillis = zonedDateTime.format(
+                            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS")
+                    );
+                    String formattedData = String.format(Locale.US, "%s;%s;%s\n",
+                            timestampWithMillis, data, currentTestUUID);
 
-                sensorDataMap.get(sensorName).append(formattedData);
-            }
+                    sensorDataMap.get(sensorName).append(formattedData);
+                }
+            });
         }
     }
 
@@ -128,58 +135,49 @@ public class SensorDataManager implements SensorEventListener {
         StringBuilder data = new StringBuilder();
         for (int i = 0; i < length; i++) {
             if(i != length-1)
-                data.append(String.format(Locale.US, "%f;", values[i]));
+                data.append(String.format(Locale.US, "%g;", values[i]));
             else
-                data.append(String.format(Locale.US, "%f", values[i]));
+                data.append(String.format(Locale.US, "%g", values[i]));
         }
         return data.toString();
     }
 
     public void writeToDatabase(){
+        boolean isDescriptionNewCopy = isDescriptionNew;
+        isDescriptionNew = false;
         Map<String, StringBuilder> sensorDataMapCopy = new HashMap<>();
         for (Map.Entry<String, StringBuilder> entry : sensorDataMap.entrySet()) {
             sensorDataMapCopy.put(entry.getKey(), new StringBuilder(entry.getValue()));
         }
-
-        boolean isDescriptionNewCopy = mainActivity.getIsDescriptionNew();
-        mainActivity.setIsDescriptionNew(false);
-        Log.i("sss", String.valueOf(isDescriptionNewCopy));
-        new Thread( () -> {
-                if (serverManager.isServerAvailable()) {
-                    //CountDownLatch latch = new CountDownLatch(2);
+        Pair<String, String> testDataCopy = new Pair<>(testData.first, testData.second);
+        Pair<String, String> descriptionDataCopy = new Pair<>(descriptionData.first, descriptionData.second);
+        Log.i("SensorDataManager", "Description is new = " + isDescriptionNew);
+        executorService.submit(() ->{
+                if (ServerManager.getInstance(context).isServerAvailable()) {
                     if(isDescriptionNewCopy)
-                        serverManager.insertData(mainActivity.getDescriptionData().first.toString(), mainActivity.getDescriptionData().second.toString());
-                    serverManager.insertData(mainActivity.getTestData().first.toString(), mainActivity.getTestData().second.toString());
-//                    try {
-//                        latch.await();
-//                    } catch (InterruptedException e) {
-//                        throw new RuntimeException(e);
-//                    }
-                    for (Map.Entry<String, StringBuilder> entry : sensorDataMapCopy.entrySet()) {
+                        ServerManager.getInstance(context).insertData(descriptionDataCopy.first, descriptionDataCopy.second);
+                    ServerManager.getInstance(context).insertData(testDataCopy.first, testDataCopy.second);
 
+                    for (Map.Entry<String, StringBuilder> entry : sensorDataMapCopy.entrySet()) {
                         String sensorName = entry.getKey();
                         String formattedData = String.valueOf(sensorDataMapCopy.get(sensorName));
-                        Log.i("dat", sensorName);
-
-                        serverManager.insertData(sensorName, formattedData);
-
+                        if(!formattedData.isEmpty())
+                            ServerManager.getInstance(context).insertData(sensorName, formattedData);
                     }
                 } else {
-                    mainActivity.cacheManager.cacheData(mainActivity.getTestData().first.toString(), mainActivity.getTestData().second.toString());
-                    mainActivity.cacheManager.cacheData(mainActivity.getDescriptionData().first.toString(), mainActivity.getDescriptionData().second.toString());
-                    for (Map.Entry<String, StringBuilder> entry : sensorDataMapCopy.entrySet()) {
+                    if(isDescriptionNewCopy)
+                        CacheManager.getInstance(context).cacheData(descriptionDataCopy.first, descriptionDataCopy.second);
+                    CacheManager.getInstance(context).cacheData(testDataCopy.first, testDataCopy.second);
 
+                    for (Map.Entry<String, StringBuilder> entry : sensorDataMapCopy.entrySet()) {
                         String sensorName = entry.getKey();
                         String formattedData = String.valueOf(sensorDataMapCopy.get(sensorName));
-
-                        Log.i("dat", formattedData);
-
-                        mainActivity.cacheManager.cacheData(sensorName, formattedData);
+                        if(!formattedData.isEmpty())
+                            CacheManager.getInstance(context).cacheData(sensorName, formattedData);
 
                     }
                 }
-
-        }).start();
+        });
 
     }
 
@@ -188,6 +186,7 @@ public class SensorDataManager implements SensorEventListener {
             String sensorName = entry.getKey();
             sensorDataMap.get(sensorName).setLength(0);
         }
+
     }
 
 
