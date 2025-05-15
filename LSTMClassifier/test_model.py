@@ -8,7 +8,7 @@ from scipy.stats import mode
 from sklearn.metrics import confusion_matrix, accuracy_score
 from tensorflow.keras.models import load_model
 
-from utils import process_csv, create_time_windows, scale_data
+from process_data import process_csv, create_time_windows, scale_data
 
 DATASET_ROOT_DIR = "splitted_data"
 ACTIVITY_CLASSES = ["10steps", "elevatordown", "elevatorup", "stairsdown", "stairsup", "standing"]
