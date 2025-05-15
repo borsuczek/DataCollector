@@ -6,7 +6,7 @@ from sklearn.preprocessing import LabelEncoder, StandardScaler
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Input, LSTM, Dropout, Dense
 from tensorflow.keras.callbacks import EarlyStopping
-from utils import process_csv, create_time_windows, scale_data
+from process_data import process_csv, create_time_windows, scale_data
 
 DATASET_ROOT_DIR = "splitted_data"
 SUBSETS = ["train", "val"]
