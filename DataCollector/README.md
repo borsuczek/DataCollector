@@ -1,7 +1,5 @@
 # DataCollector
-
-## Description
-**DataCollector** is a mobile application designed to gather data from various sensors, such as the accelerometer and gyroscope. The application enables users to collect sensor data for specific activities (standing, 10 steps, stairs up, stairs down, turning 90 degrees left, turning 90 degrees right, elevator up, elevator down) and stores it in a PostgreSQL database hosted on a server. If the server is unavailable, the data is cached locally and pushed to the server when the application is reopened and the server is accessible. Users can analyze how sensor data changes across different activities and environments using tools like PGAdmin to examine the database.
+**DataCollector** is a mobile application designed to gather data from various sensors, such as the accelerometer and gyroscope. The application enables users to collect sensor data for specific activities (standing, 10 steps, stairs up, stairs down, turning 90 degrees left, turning 90 degrees right, elevator up, elevator down) and stores it in a PostgreSQL database hosted on a server. If the server is unavailable, the data is cached locally and pushed to the server when the application is reopened and the server is accessible. Users can analyze how sensor data changes across different activities and environments using tools like PGAdmin to examine the database. Code for setting up the server and database is available in the `projectX-data` folder.
 
 ## Usage
 1. **Start Application**  
