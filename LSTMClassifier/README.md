@@ -1,6 +1,6 @@
-# Activity Classification from Sensor Data using LSTM
+# Activity Classification using LSTM
 
-This project uses LSTM neural networks to classify human activities based on velocity data derived from mobile phone sensor recordings. It includes data preprocessing, training, evaluation, and visualization.
+This project uses LSTM neural networks to classify human activities based on velocity data derived from linear acceleration mobile phone sensor recordings. It includes data preprocessing, training, evaluation, and visualization.
 
 ## Project Structure
 
