@@ -81,28 +81,13 @@ python test_model.py
 
 This script:
 
-- Loads the test data and performs inference.
+- Loads the trained model, scaler, and label encoder.
+- Processes test CSV files into sequences and creates time windows.
 - Evaluates the model on time windows and full sequences (via majority vote).
 - Saves confusion matrices:
   - `confusion_matrix_time_windows.png`
   - `confusion_matrix_full_sequences.png`
-- Identifies and saves misclassified sequences to `misclassified/`.
-
-## Results
-
-During testing, the model provides:
-
-- Accuracy on time windows.
-- Accuracy on full sequences (majority vote over windows).
-- Confusion matrices for both evaluation types.
-- Misclassified samples grouped by true class.
-
-Example output:
-```
-Time windows accuracy: 0.89
-Full sequence accuracy: 0.92
-Best model was saved from epoch: 48
-```
+- Saves misclassified examples in the misclassified/ directory, grouped by the true class.
 
 ## Dependencies
 
